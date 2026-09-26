@@ -30,6 +30,8 @@ import org.lwjgl.system.MemoryUtil;
 public final class DemotivatorManager {
     private static final DemotivatorManager INSTANCE = new DemotivatorManager();
     private static final int SCREEN_WAIT_LIMIT_TICKS = 200;
+    private static final int WORK_LIMIT_TICKS = 600;
+    private static final int PREVIEW_MAX_SIDE = 2048;
 
     private final ExecutorService worker = Executors.newSingleThreadExecutor(runnable -> {
         Thread thread = new Thread(runnable, "Demotivator Worker");
@@ -38,10 +40,12 @@ public final class DemotivatorManager {
     });
 
     private Phase phase = Phase.IDLE;
+    private int generation;
     private DemotivatorText pendingText;
     private DemotivatorConfig pendingConfig;
     private int delayTicks;
     private int waitedTicks;
+    private int workTicks;
     private boolean hudChanged;
     private Supplier<Screen> pendingScreen;
     private DemotivatorResult lastResult;
@@ -54,22 +58,32 @@ public final class DemotivatorManager {
         return INSTANCE;
     }
 
-    public boolean isBusy() {
-        return phase != Phase.IDLE;
-    }
-
     public DemotivatorResult lastResult() {
         return lastResult;
+    }
+
+    public boolean isTextureLive(Identifier texture) {
+        return texture != null && lastResult != null && texture.equals(lastResult.texture());
+    }
+
+    public void warmUp() {
+        try {
+            worker.execute(DemotivatorComposer::warmUp);
+        } catch (RuntimeException exception) {
+            DemotivatorClient.LOGGER.warn("Could not warm up font list", exception);
+        }
     }
 
     public boolean request(DemotivatorText text) {
         if (phase != Phase.IDLE) {
             return false;
         }
+        generation++;
         pendingText = text;
         pendingConfig = DemotivatorConfig.currentCopy();
         delayTicks = pendingConfig.captureDelayTicks;
         waitedTicks = 0;
+        workTicks = 0;
         hudChanged = false;
         phase = Phase.WAITING;
         return true;
@@ -84,6 +98,12 @@ public final class DemotivatorManager {
             Supplier<Screen> screen = pendingScreen;
             pendingScreen = null;
             minecraft.setScreenAndShow(screen.get());
+        }
+        if (phase == Phase.CAPTURING || phase == Phase.PROCESSING) {
+            if (++workTicks > WORK_LIMIT_TICKS) {
+                abort(minecraft, Component.translatable("demotivator.message.timeout"));
+            }
+            return;
         }
         if (phase != Phase.WAITING) {
             return;
@@ -126,30 +146,36 @@ public final class DemotivatorManager {
 
     private void capture(Minecraft minecraft) {
         phase = Phase.CAPTURING;
+        workTicks = 0;
+        int token = generation;
         DemotivatorText text = pendingText;
         DemotivatorConfig config = pendingConfig;
         try {
             Screenshot.takeScreenshot(MinecraftAccess.mainRenderTarget(minecraft),
-                    image -> onCaptured(minecraft, image, text, config));
+                    image -> onCaptured(minecraft, token, image, text, config));
         } catch (RuntimeException exception) {
             DemotivatorClient.LOGGER.error("Could not take screenshot", exception);
-            fail(minecraft, exception);
+            fail(minecraft, token, exception);
         } finally {
             restoreHud(minecraft);
         }
     }
 
-    private void onCaptured(Minecraft minecraft, NativeImage image, DemotivatorText text, DemotivatorConfig config) {
+    private void onCaptured(Minecraft minecraft, int token, NativeImage image, DemotivatorText text,
+                            DemotivatorConfig config) {
         int width;
         int height;
         int[] pixels;
         try {
+            if (!isCurrent(token, Phase.CAPTURING)) {
+                return;
+            }
             width = image.getWidth();
             height = image.getHeight();
             pixels = image.getPixels();
         } catch (RuntimeException exception) {
             DemotivatorClient.LOGGER.error("Could not read screenshot pixels", exception);
-            fail(minecraft, exception);
+            fail(minecraft, token, exception);
             return;
         } finally {
             image.close();
@@ -158,13 +184,13 @@ public final class DemotivatorManager {
         DemotivatorStyle style = config.style();
         Path directory = outputDirectory(minecraft, config);
         try {
-            worker.execute(() -> process(minecraft, width, height, pixels, text, style, directory, config));
+            worker.execute(() -> process(minecraft, token, width, height, pixels, text, style, directory, config));
         } catch (RuntimeException exception) {
-            fail(minecraft, exception);
+            fail(minecraft, token, exception);
         }
     }
 
-    private void process(Minecraft minecraft, int width, int height, int[] pixels, DemotivatorText text,
+    private void process(Minecraft minecraft, int token, int width, int height, int[] pixels, DemotivatorText text,
                          DemotivatorStyle style, Path directory, DemotivatorConfig config) {
         try {
             BufferedImage source = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -175,45 +201,63 @@ public final class DemotivatorManager {
             if (!ImageIO.write(poster, "png", file.toFile())) {
                 throw new IOException("No PNG writer available");
             }
-            int posterWidth = poster.getWidth();
-            int posterHeight = poster.getHeight();
-            int[] abgr = toAbgr(poster.getRGB(0, 0, posterWidth, posterHeight, null, 0, posterWidth));
-            minecraft.execute(() -> publish(minecraft, file, posterWidth, posterHeight, abgr, config));
+            BufferedImage preview = DemotivatorComposer.fit(poster, PREVIEW_MAX_SIDE);
+            int previewWidth = preview.getWidth();
+            int previewHeight = preview.getHeight();
+            int[] abgr = toAbgr(preview.getRGB(0, 0, previewWidth, previewHeight, null, 0, previewWidth));
+            DemotivatorResult result = new DemotivatorResult(file, poster.getWidth(), poster.getHeight(), null);
+            minecraft.execute(() -> publish(minecraft, token, result, previewWidth, previewHeight, abgr, config));
         } catch (IOException | RuntimeException exception) {
             DemotivatorClient.LOGGER.error("Could not build demotivator", exception);
-            minecraft.execute(() -> fail(minecraft, exception));
+            minecraft.execute(() -> fail(minecraft, token, exception));
         }
     }
 
-    private void publish(Minecraft minecraft, Path file, int width, int height, int[] abgr, DemotivatorConfig config) {
+    private void publish(Minecraft minecraft, int token, DemotivatorResult saved, int textureWidth, int textureHeight,
+                         int[] abgr, DemotivatorConfig config) {
+        if (!isCurrent(token, Phase.PROCESSING)) {
+            return;
+        }
         phase = Phase.IDLE;
-        Identifier texture = uploadTexture(minecraft, width, height, abgr);
-        if (lastResult != null && lastResult.texture() != null) {
-            minecraft.getTextureManager().release(lastResult.texture());
+        pendingText = null;
+        Identifier texture = uploadTexture(minecraft, textureWidth, textureHeight, abgr);
+        DemotivatorResult previous = lastResult;
+        lastResult = new DemotivatorResult(saved.file(), saved.width(), saved.height(), texture);
+        if (previous != null && previous.texture() != null) {
+            minecraft.getTextureManager().release(previous.texture());
         }
-        lastResult = new DemotivatorResult(file, width, height, texture);
-        DemotivatorClient.LOGGER.info("Saved demotivator {}", file);
+        DemotivatorClient.LOGGER.info("Saved demotivator {}", saved.file());
         if (config.chatMessage) {
-            MinecraftAccess.addChatMessage(minecraft, savedMessage(file));
+            MinecraftAccess.addChatMessage(minecraft, savedMessage(saved.file()));
         }
-        if (config.showPreview && texture != null && MinecraftAccess.getScreen(minecraft) == null) {
+        Screen current = MinecraftAccess.getScreen(minecraft);
+        boolean replacePreview = current instanceof DemotivatorPreviewScreen;
+        if (texture != null && (replacePreview || (config.showPreview && current == null))) {
             minecraft.setScreenAndShow(new DemotivatorPreviewScreen(null, lastResult));
         }
     }
 
     private Identifier uploadTexture(Minecraft minecraft, int width, int height, int[] abgr) {
         NativeImage image = null;
+        Identifier id = null;
         try {
             image = new NativeImage(width, height, false);
             MemoryUtil.memIntBuffer(image.getPointer(), abgr.length).put(abgr);
-            Identifier id = Identifier.fromNamespaceAndPath(DemotivatorClient.MOD_ID, "preview/" + (++textureCounter));
             DynamicTexture texture = new DynamicTexture(() -> "Demotivator preview", image);
+            image = null;
+            id = Identifier.fromNamespaceAndPath(DemotivatorClient.MOD_ID, "preview/" + (++textureCounter));
             minecraft.getTextureManager().register(id, texture);
             texture.upload();
             return id;
         } catch (RuntimeException exception) {
             if (image != null) {
                 image.close();
+            }
+            if (id != null) {
+                try {
+                    minecraft.getTextureManager().release(id);
+                } catch (RuntimeException ignored) {
+                }
             }
             DemotivatorClient.LOGGER.warn("Could not upload demotivator preview", exception);
             return null;
@@ -232,7 +276,14 @@ public final class DemotivatorManager {
         return Component.translatable("demotivator.message.saved", name).append(" ").append(folder);
     }
 
-    private void fail(Minecraft minecraft, Exception exception) {
+    private boolean isCurrent(int token, Phase expected) {
+        return token == generation && phase == expected;
+    }
+
+    private void fail(Minecraft minecraft, int token, Exception exception) {
+        if (token != generation || phase == Phase.IDLE) {
+            return;
+        }
         String reason = exception.getMessage() == null ? exception.getClass().getSimpleName() : exception.getMessage();
         abort(minecraft, Component.translatable("demotivator.message.failed", reason));
     }
@@ -240,6 +291,7 @@ public final class DemotivatorManager {
     private void abort(Minecraft minecraft, Component message) {
         restoreHud(minecraft);
         phase = Phase.IDLE;
+        generation++;
         pendingText = null;
         MinecraftAccess.addChatMessage(minecraft, message.copy().withStyle(ChatFormatting.RED));
     }

@@ -65,8 +65,12 @@ public class DemotivatorPreviewScreen extends Screen {
         int drawX = (this.width - drawWidth) / 2;
         int drawY = areaTop + (areaHeight - drawHeight) / 2;
         graphics.fill(drawX - 1, drawY - 1, drawX + drawWidth + 1, drawY + drawHeight + 1, BORDER_PRIMARY);
-        if (result.texture() != null) {
+        if (DemotivatorManager.getInstance().isTextureLive(result.texture())) {
             graphics.blit(result.texture(), drawX, drawY, drawX + drawWidth, drawY + drawHeight, 0.0F, 1.0F, 0.0F, 1.0F);
+        } else {
+            graphics.fill(drawX, drawY, drawX + drawWidth, drawY + drawHeight, 0xFF000000);
+            graphics.centeredText(this.font, Component.translatable("demotivator.preview.unavailable"),
+                    this.width / 2, drawY + drawHeight / 2 - 4, TEXT_DIM);
         }
 
         Component info = Component.translatable("demotivator.preview.info",

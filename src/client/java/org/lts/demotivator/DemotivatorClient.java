@@ -25,6 +25,7 @@ public final class DemotivatorClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         DemotivatorConfig.load();
+        DemotivatorManager.getInstance().warmUp();
         KeyMapping.Category category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(MOD_ID, "main"));
         settingsKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.demotivator.settings", InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), category));

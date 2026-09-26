@@ -15,6 +15,8 @@ import java.util.Set;
 
 public final class DemotivatorComposer {
     private static final double MIN_FONT_SHRINK = 0.45;
+    private static final int TITLE_MAX_LINES = 3;
+    private static final int SUBTITLE_MAX_LINES = 4;
     private static volatile Set<String> availableFamilies;
 
     private DemotivatorComposer() {
@@ -33,9 +35,10 @@ public final class DemotivatorComposer {
 
         String title = style.uppercaseTitle() ? text.title().toUpperCase(Locale.ROOT) : text.title();
         TextBlock titleBlock = layout(title, resolveFont(style.titleFont(), Font.SERIF),
-                imageWidth * style.titleSizePercent() / 100.0, textWidth);
+                imageWidth * style.titleSizePercent() / 100.0, textWidth, Math.max(TITLE_MAX_LINES, explicitLines(title)));
         TextBlock subtitleBlock = layout(text.subtitle(), resolveFont(style.subtitleFont(), Font.SANS_SERIF),
-                imageWidth * style.subtitleSizePercent() / 100.0, textWidth);
+                imageWidth * style.subtitleSizePercent() / 100.0, textWidth,
+                Math.max(SUBTITLE_MAX_LINES, explicitLines(text.subtitle())));
 
         int leadSize = titleBlock.isEmpty() ? subtitleBlock.font().getSize() : titleBlock.font().getSize();
         int afterFrame = Math.max(margin / 3, (int) Math.round(leadSize * 0.4));
@@ -82,7 +85,21 @@ public final class DemotivatorComposer {
         return !wanted.isEmpty() && (isLogical(wanted) || families().contains(wanted.toLowerCase(Locale.ROOT)));
     }
 
-    static TextBlock layout(String text, Font base, double size, int maxWidth) {
+    public static void warmUp() {
+        families();
+    }
+
+    public static BufferedImage fit(BufferedImage source, int maxSide) {
+        int largest = Math.max(source.getWidth(), source.getHeight());
+        if (largest <= maxSide) {
+            return source;
+        }
+        double ratio = maxSide / (double) largest;
+        return scale(source, Math.max(1, (int) Math.round(source.getWidth() * ratio)),
+                Math.max(1, (int) Math.round(source.getHeight() * ratio)));
+    }
+
+    static TextBlock layout(String text, Font base, double size, int maxWidth, int maxLines) {
         int requested = Math.max(6, (int) Math.round(size));
         Font font = base.deriveFont(Font.PLAIN, (float) requested);
         if (text == null || text.isEmpty()) {
@@ -96,7 +113,7 @@ public final class DemotivatorComposer {
                 font = base.deriveFont(Font.PLAIN, (float) current);
                 FontMetrics metrics = scratch.getFontMetrics(font);
                 List<String> lines = wrap(text, metrics, maxWidth, current <= minimum);
-                if (lines != null) {
+                if (lines != null && (lines.size() <= maxLines || current <= minimum)) {
                     return new TextBlock(font, lines, metrics.getAscent() + metrics.getDescent(), metrics.getAscent());
                 }
                 current = Math.max(minimum, (int) Math.floor(current * 0.9));
@@ -123,10 +140,14 @@ public final class DemotivatorComposer {
                         line.setLength(0);
                     }
                     String rest = word;
-                    while (metrics.stringWidth(rest) > maxWidth) {
-                        int cut = rest.length() - 1;
-                        while (cut > 1 && metrics.stringWidth(rest.substring(0, cut)) > maxWidth) {
-                            cut--;
+                    while (rest.codePointCount(0, rest.length()) > 1 && metrics.stringWidth(rest) > maxWidth) {
+                        int cut = rest.offsetByCodePoints(rest.length(), -1);
+                        while (metrics.stringWidth(rest.substring(0, cut)) > maxWidth) {
+                            int previous = rest.offsetByCodePoints(cut, -1);
+                            if (previous == 0) {
+                                break;
+                            }
+                            cut = previous;
                         }
                         lines.add(rest.substring(0, cut));
                         rest = rest.substring(cut);
@@ -147,6 +168,10 @@ public final class DemotivatorComposer {
             lines.add(line.toString());
         }
         return lines;
+    }
+
+    private static int explicitLines(String text) {
+        return text == null || text.isEmpty() ? 0 : (int) text.chars().filter(c -> c == '\n').count() + 1;
     }
 
     private static BufferedImage scale(BufferedImage source, int width, int height) {

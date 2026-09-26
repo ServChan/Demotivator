@@ -31,6 +31,10 @@ public record DemotivatorText(String title, String subtitle) {
                 .replaceAll(" {2,}", " ")
                 .replaceAll(" *\n *", "\n")
                 .strip();
-        return collapsed.length() > MAX_LENGTH ? collapsed.substring(0, MAX_LENGTH).strip() : collapsed;
+        if (collapsed.length() <= MAX_LENGTH) {
+            return collapsed;
+        }
+        int end = Character.isHighSurrogate(collapsed.charAt(MAX_LENGTH - 1)) ? MAX_LENGTH - 1 : MAX_LENGTH;
+        return collapsed.substring(0, end).strip();
     }
 }

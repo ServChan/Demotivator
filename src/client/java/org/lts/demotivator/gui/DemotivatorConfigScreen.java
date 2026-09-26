@@ -34,7 +34,6 @@ public class DemotivatorConfigScreen extends Screen {
     private static final int STATUS_WARN = 0xFFFFC857;
 
     private static final int FIELD_HEIGHT = 20;
-    private static final int ROW_STEP = 24;
     private static final int CONTENT_TOP = 66;
     private static final int NUMBER_WIDTH = 70;
     private static final int TEXT_WIDTH = 120;
@@ -48,6 +47,7 @@ public class DemotivatorConfigScreen extends Screen {
     private final List<Swatch> swatches = new ArrayList<>();
 
     private Tab tab = Tab.QUICK;
+    private int rowStep = 24;
     private Button saveButton;
     private String validationError = "";
     private String warning = "";
@@ -64,6 +64,7 @@ public class DemotivatorConfigScreen extends Screen {
         fields.clear();
         labels.clear();
         swatches.clear();
+        rowStep = this.height < 300 ? 22 : 24;
         int contentWidth = contentWidth();
         int left = (this.width - contentWidth) / 2;
 
@@ -97,22 +98,30 @@ public class DemotivatorConfigScreen extends Screen {
         addToggle(left, y, half, "demotivator.option.hide_hud", () -> config.hideHud, v -> config.hideHud = v);
         addToggle(left + half + 10, y, half, "demotivator.option.show_preview",
                 () -> config.showPreview, v -> config.showPreview = v);
-        y += ROW_STEP;
+        y += rowStep;
         addToggle(left, y, half, "demotivator.option.chat_message", () -> config.chatMessage, v -> config.chatMessage = v);
         addRenderableWidget(Button.builder(Component.translatable("demotivator.button.open_folder"),
                         button -> DemotivatorManager.getInstance().openFolder())
                 .bounds(left + half + 10, y, half, FIELD_HEIGHT).build());
-        y += ROW_STEP + 6;
+        y += rowStep + 6;
         placeField("delay", left, y, contentWidth, NUMBER_WIDTH);
-        y += ROW_STEP;
+        y += rowStep;
         placeField("folder", left, y, contentWidth, TEXT_WIDTH + 40);
-        y += ROW_STEP;
+        y += rowStep;
         placeField("default_subtitle", left, y, contentWidth, Math.min(260, contentWidth / 2));
-        y += ROW_STEP + 8;
-        labels.add(new Label(Component.translatable("demotivator.hint.usage"), left, y, TEXT_DIM, contentWidth));
-        labels.add(new Label(Component.translatable("demotivator.hint.subtitle"), left, y + 12, TEXT_DIM, contentWidth));
-        labels.add(new Label(Component.translatable("demotivator.hint.output",
-                "screenshots/" + OutputFiles.sanitizeFolder(config.outputFolder)), left, y + 24, TEXT_DIM, contentWidth));
+        y += rowStep + 8;
+        List<Supplier<Component>> hints = List.of(
+                () -> Component.translatable("demotivator.hint.usage"),
+                () -> Component.translatable("demotivator.hint.subtitle"),
+                () -> Component.translatable("demotivator.hint.output",
+                        "screenshots/" + OutputFiles.sanitizeFolder(config.outputFolder)));
+        for (Supplier<Component> hint : hints) {
+            if (y + 9 >= this.height - 48) {
+                break;
+            }
+            labels.add(new Label(hint, left, y, TEXT_DIM, contentWidth));
+            y += 12;
+        }
     }
 
     private void buildStyleTab(int left, int contentWidth) {
@@ -121,7 +130,7 @@ public class DemotivatorConfigScreen extends Screen {
         int y = CONTENT_TOP;
         for (String id : List.of("width", "margin", "frame", "gap", "title_size", "subtitle_size")) {
             placeField(id, left, y, half, NUMBER_WIDTH);
-            y += ROW_STEP;
+            y += rowStep;
         }
         addToggle(left, y, half, "demotivator.option.uppercase",
                 () -> config.uppercaseTitle, v -> config.uppercaseTitle = v);
@@ -129,14 +138,14 @@ public class DemotivatorConfigScreen extends Screen {
         y = CONTENT_TOP;
         for (String id : List.of("title_font", "subtitle_font")) {
             placeField(id, right, y, half, Math.min(TEXT_WIDTH, half / 2));
-            y += ROW_STEP;
+            y += rowStep;
         }
         for (String id : List.of("background", "frame_color", "title_color", "subtitle_color")) {
             int fieldWidth = NUMBER_WIDTH;
             EditBox box = placeField(id, right, y, half, fieldWidth + 18);
             swatches.add(new Swatch(id, box.getX() + fieldWidth + 4, y + 3));
             box.setWidth(fieldWidth);
-            y += ROW_STEP;
+            y += rowStep;
         }
     }
 
@@ -217,7 +226,7 @@ public class DemotivatorConfigScreen extends Screen {
         FieldSpec spec = specs.get(id);
         Component label = Component.translatable(spec.labelKey());
         int fieldX = x + rowWidth - fieldWidth;
-        labels.add(new Label(label, x, y + 6, ACCENT_CYAN, Math.max(20, rowWidth - fieldWidth - 6)));
+        labels.add(new Label(() -> label, x, y + 6, ACCENT_CYAN, Math.max(20, rowWidth - fieldWidth - 6)));
         EditBox box = new EditBox(this.font, fieldX, y, fieldWidth, FIELD_HEIGHT, label);
         box.setMaxLength(spec.maxLength());
         box.setValue(drafts.getOrDefault(id, spec.getter().get()));
@@ -339,7 +348,7 @@ public class DemotivatorConfigScreen extends Screen {
         graphics.centeredText(this.font, this.title, this.width / 2, 10, 0xFFFFFFFF);
 
         for (Label label : labels) {
-            String text = this.font.plainSubstrByWidth(label.text().getString(), label.maxWidth());
+            String text = this.font.plainSubstrByWidth(label.text().get().getString(), label.maxWidth());
             graphics.text(this.font, Component.literal(text), label.x(), label.y(), label.color(), false);
         }
         for (Swatch swatch : swatches) {
@@ -399,7 +408,7 @@ public class DemotivatorConfigScreen extends Screen {
                              Function<String, String> validator, Consumer<String> setter, String hint) {
     }
 
-    private record Label(Component text, int x, int y, int color, int maxWidth) {
+    private record Label(Supplier<Component> text, int x, int y, int color, int maxWidth) {
     }
 
     private record Swatch(String id, int x, int y) {

@@ -45,8 +45,10 @@ public final class DemotivatorCommands {
             context.getSource().sendError(Component.translatable("demotivator.message.busy"));
             return 0;
         }
-        context.getSource().sendFeedback(Component.translatable("demotivator.message.capturing")
-                .withStyle(ChatFormatting.GRAY));
+        if (DemotivatorConfig.current().hideHud) {
+            context.getSource().sendFeedback(Component.translatable("demotivator.message.capturing")
+                    .withStyle(ChatFormatting.GRAY));
+        }
         return 1;
     }
 

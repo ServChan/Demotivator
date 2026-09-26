@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 public final class OutputFiles {
     public static final String DEFAULT_FOLDER = "demotivators";
@@ -19,10 +20,16 @@ public final class OutputFiles {
         String cleaned = folder.strip()
                 .replaceAll("[^A-Za-z0-9 _.-]", "_")
                 .replaceAll("^[. ]+|[. ]+$", "");
-        if (cleaned.isEmpty() || cleaned.length() > 64) {
+        if (cleaned.isEmpty() || cleaned.length() > 64 || isReservedName(cleaned)) {
             return DEFAULT_FOLDER;
         }
         return cleaned;
+    }
+
+    private static boolean isReservedName(String name) {
+        int dot = name.indexOf('.');
+        String base = (dot < 0 ? name : name.substring(0, dot)).strip().toUpperCase(Locale.ROOT);
+        return base.matches("CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9]");
     }
 
     public static Path uniqueFile(Path directory, LocalDateTime time) {
