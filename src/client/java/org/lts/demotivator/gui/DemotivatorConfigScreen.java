@@ -20,7 +20,7 @@ import org.lts.demotivator.DemotivatorManager;
 import org.lts.demotivator.render.ColorCodec;
 import org.lts.demotivator.render.DemotivatorComposer;
 import org.lts.demotivator.render.OutputFiles;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 public class DemotivatorConfigScreen extends Screen {
     private static final int BG_CONTAINER = 0xF00D141F;
@@ -371,7 +371,7 @@ public class DemotivatorConfigScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+        if (event.key() == InputConstants.KEY_ESCAPE) {
             onClose();
             return true;
         }

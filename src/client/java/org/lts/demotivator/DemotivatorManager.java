@@ -1,5 +1,6 @@
 package org.lts.demotivator;
 
+import com.mojang.blaze3d.Blaze3D;
 import com.mojang.blaze3d.platform.NativeImage;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -19,7 +20,6 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.Util;
 import org.lts.demotivator.gui.DemotivatorPreviewScreen;
 import org.lts.demotivator.render.DemotivatorComposer;
 import org.lts.demotivator.render.DemotivatorStyle;
@@ -134,7 +134,7 @@ public final class DemotivatorManager {
         Path folder = outputDirectory(Minecraft.getInstance(), DemotivatorConfig.current());
         try {
             Files.createDirectories(folder);
-            Util.getPlatform().openPath(folder);
+            Blaze3D.openPath(folder);
         } catch (IOException | RuntimeException exception) {
             DemotivatorClient.LOGGER.warn("Could not open folder {}", folder, exception);
         }

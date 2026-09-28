@@ -1,15 +1,15 @@
 package org.lts.demotivator.gui;
 
+import com.mojang.blaze3d.Blaze3D;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Util;
 import org.lts.demotivator.DemotivatorClient;
 import org.lts.demotivator.DemotivatorManager;
 import org.lts.demotivator.DemotivatorResult;
-import org.lwjgl.glfw.GLFW;
 
 public class DemotivatorPreviewScreen extends Screen {
     private static final int BG_CONTAINER = 0xF00D141F;
@@ -81,7 +81,7 @@ public class DemotivatorPreviewScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+        if (event.key() == InputConstants.KEY_ESCAPE) {
             onClose();
             return true;
         }
@@ -97,7 +97,7 @@ public class DemotivatorPreviewScreen extends Screen {
 
     private void openFile() {
         try {
-            Util.getPlatform().openPath(result.file());
+            Blaze3D.openPath(result.file());
         } catch (RuntimeException exception) {
             DemotivatorClient.LOGGER.warn("Could not open {}", result.file(), exception);
         }

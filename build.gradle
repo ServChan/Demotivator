@@ -7,10 +7,9 @@ version = project.mod_version
 group = project.maven_group
 def modVersion = project.version.toString()
 def licenseArchiveName = project.name
-def minecraftVersionKey = project.minecraft_version.toString().replace('.', '_')
-def fabricLifecycleEventsVersion = project.property("fabric_lifecycle_events_version_${minecraftVersionKey}")
-def fabricKeyMappingApiVersion = project.property("fabric_key_mapping_api_version_${minecraftVersionKey}")
-def fabricCommandApiVersion = project.property("fabric_command_api_version_${minecraftVersionKey}")
+def fabricLifecycleEventsVersion = project.property("fabric_lifecycle_events_version")
+def fabricKeyMappingApiVersion = project.property("fabric_key_mapping_api_version")
+def fabricCommandApiVersion = project.property("fabric_command_api_version")
 def localModMenu = file(project.modmenu_jar)
 
 base {
@@ -45,11 +44,6 @@ dependencies {
         compileOnly files(localModMenu)
     } else {
         compileOnly("com.terraformersmc:modmenu:${project.modmenu_version}") {
-            transitive = false
-        }
-    }
-    if (project.minecraft_version == "26.1.2") {
-        clientRuntimeOnly("com.terraformersmc:modmenu:${project.modmenu_version}") {
             transitive = false
         }
     }

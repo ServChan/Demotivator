@@ -28,9 +28,9 @@ public final class DemotivatorClient implements ClientModInitializer {
         DemotivatorManager.getInstance().warmUp();
         KeyMapping.Category category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(MOD_ID, "main"));
         settingsKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.demotivator.settings", InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), category));
+                "key.demotivator.settings", InputConstants.Type.KEYBOARD, InputConstants.UNKNOWN.getValue(), category));
         lastKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.demotivator.last", InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), category));
+                "key.demotivator.last", InputConstants.Type.KEYBOARD, InputConstants.UNKNOWN.getValue(), category));
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, buildContext) ->
                 DemotivatorCommands.register(dispatcher));

@@ -1,9 +1,9 @@
 # Demotivator
 
-[![Minecraft Version](https://img.shields.io/badge/Minecraft-26.1.2%20%7C%2026.2-brightgreen?style=flat-square&logo=minecraft)](README.md)
+[![Minecraft Version](https://img.shields.io/badge/Minecraft-26.3-brightgreen?style=flat-square&logo=minecraft)](README.md)
 [![Platform](https://img.shields.io/badge/Platform-Fabric-blue?style=flat-square&logo=fabric)](README.md)
 [![Java Target](https://img.shields.io/badge/Java-25-orange?style=flat-square&logo=openjdk)](README.md)
-[![Mod Version](https://img.shields.io/badge/Version-1.0.0-purple?style=flat-square)](README.md)
+[![Mod Version](https://img.shields.io/badge/Version-1.1.0-purple?style=flat-square)](README.md)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
 Client-side Fabric mod that turns a screenshot into a classic demotivator poster: black background, thin white frame, large serif title and a smaller subtitle, all from one chat command.
@@ -12,7 +12,7 @@ Client-side Fabric mod that turns a screenshot into a classic demotivator poster
 
 ### Что это
 
-`Demotivator` (mod id `demotivator`) — клиентский Fabric-мод для Minecraft 26.1.2–26.2. Команда `/demotivate <текст>` закрывает чат, на время снимка скрывает HUD, делает скриншот и собирает из него демотиватор в PNG. Сборка картинки и запись файла идут в фоновом потоке, игра не подвисает.
+`Demotivator` (mod id `demotivator`) — клиентский Fabric-мод для Minecraft 26.3. Команда `/demotivate <текст>` закрывает чат, на время снимка скрывает HUD, делает скриншот и собирает из него демотиватор в PNG. Сборка картинки и запись файла идут в фоновом потоке, игра не подвисает.
 
 ### Команды
 
@@ -50,19 +50,18 @@ Client-side Fabric mod that turns a screenshot into a classic demotivator poster
 ### Установка
 
 1. **Fabric Loader** `0.19.3+` и **Fabric API**.
-2. Скопируйте `demotivator-1.0.0.jar` из `build/libs/` в папку `mods/`.
+2. Скопируйте `demotivator-1.1.0.jar` из `build/libs/` в папку `mods/`.
 3. **Mod Menu** — опционально.
 
-**Требования:** Minecraft `26.1.2`–`26.2` (один JAR) · Java `25` · только клиент.
+**Требования:** Minecraft `26.3` · Java `25` · только клиент.
 
 ### Сборка
 
 ```powershell
-.\gradlew.bat clean build                            # 26.1.2 (по умолчанию) + тесты
-.\gradlew.bat clean build "-Pminecraft_version=26.2" # проверка на 26.2
+.\gradlew.bat clean build
 ```
 
-Готовый JAR: `build/libs/demotivator-1.0.0.jar`.
+Готовый JAR: `build/libs/demotivator-1.1.0.jar`.
 
 ---
 
@@ -70,7 +69,7 @@ Client-side Fabric mod that turns a screenshot into a classic demotivator poster
 
 ### What It Is
 
-`Demotivator` (mod id `demotivator`) is a client-side Fabric mod for Minecraft 26.1.2–26.2. `/demotivate <text>` closes chat, hides the HUD for the shot, takes a screenshot and composes it into a demotivator PNG. Composition and file writing run on a background thread, so the game does not stall.
+`Demotivator` (mod id `demotivator`) is a client-side Fabric mod for Minecraft 26.3. `/demotivate <text>` closes chat, hides the HUD for the shot, takes a screenshot and composes it into a demotivator PNG. Composition and file writing run on a background thread, so the game does not stall.
 
 ### Commands
 
@@ -106,19 +105,18 @@ Invalid values turn red and Save stays disabled until they are fixed. `config/de
 ### Installation
 
 1. **Fabric Loader** `0.19.3+` and **Fabric API**.
-2. Copy `demotivator-1.0.0.jar` from `build/libs/` into `mods/`.
+2. Copy `demotivator-1.1.0.jar` from `build/libs/` into `mods/`.
 3. **Mod Menu** — optional.
 
-**Requirements:** Minecraft `26.1.2`–`26.2` (single JAR) · Java `25` · client-only.
+**Requirements:** Minecraft `26.3` · Java `25` · client-only.
 
 ### Building
 
 ```powershell
-.\gradlew.bat clean build                            # 26.1.2 (default) + tests
-.\gradlew.bat clean build "-Pminecraft_version=26.2" # verify against 26.2
+.\gradlew.bat clean build
 ```
 
-Output JAR: `build/libs/demotivator-1.0.0.jar`.
+Output JAR: `build/libs/demotivator-1.1.0.jar`.
 
 ## Лицензия / License
 
