@@ -8,6 +8,7 @@
     "LTS_Server"
   ],
   "license": "MIT",
+  "icon": "assets/demotivator/icon.png",
   "environment": "client",
   "entrypoints": {
     "client": [

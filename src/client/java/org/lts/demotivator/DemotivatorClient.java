@@ -12,12 +12,10 @@ import net.minecraft.resources.Identifier;
 import org.lts.demotivator.command.DemotivatorCommands;
 import org.lts.demotivator.gui.DemotivatorConfigScreen;
 import org.lts.demotivator.gui.DemotivatorPreviewScreen;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class DemotivatorClient implements ClientModInitializer {
     public static final String MOD_ID = "demotivator";
-    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    public static final ModLog LOGGER = ModLog.root();
 
     private static KeyMapping settingsKey;
     private static KeyMapping lastKey;
@@ -36,7 +34,7 @@ public final class DemotivatorClient implements ClientModInitializer {
                 DemotivatorCommands.register(dispatcher));
         ClientTickEvents.END_CLIENT_TICK.register(DemotivatorClient::tick);
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> DemotivatorManager.getInstance().shutdown());
-        LOGGER.info("Demotivator initialized");
+        LOGGER.ready("type {} to make one", "/demotivate");
     }
 
     private static void tick(Minecraft minecraft) {

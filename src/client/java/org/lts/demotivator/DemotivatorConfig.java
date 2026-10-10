@@ -64,7 +64,7 @@ public final class DemotivatorConfig {
                 try {
                     writeAtomically(configPath, current, true);
                 } catch (IOException exception) {
-                    DemotivatorClient.LOGGER.error("Could not persist migrated config {}", configPath, exception);
+                    DemotivatorClient.LOGGER.error("Could not save the migrated config {}", configPath, exception);
                 }
             }
             return;
@@ -75,7 +75,7 @@ public final class DemotivatorConfig {
         try {
             writeAtomically(configPath, current, false);
         } catch (IOException exception) {
-            DemotivatorClient.LOGGER.error("Could not initialize config {}", configPath, exception);
+            DemotivatorClient.LOGGER.error("Could not create config {}", configPath, exception);
         }
     }
 
