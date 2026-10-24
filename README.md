@@ -8,6 +8,8 @@
 
 Client-side Fabric mod that turns a screenshot into a classic demotivator poster: black background, thin white frame, large serif title and a smaller subtitle, all from one chat command.
 
+**Руководство / User guide:** [Русский](docs/USER_GUIDE_RU.md) · [English](docs/USER_GUIDE_EN.md)
+
 ## Русский
 
 ### Что это
@@ -34,8 +36,8 @@ Client-side Fabric mod that turns a screenshot into a classic demotivator poster
 
 | Действие | Клавиша по умолчанию | Переназначение |
 |---|---|---|
-| Открыть настройки | не назначена | Options → Controls → Demotivator |
-| Показать последний демотиватор | не назначена | Options → Controls → Demotivator |
+| Открыть настройки | не назначена | Настройки → Управление → Demotivator |
+| Показать последний демотиватор | не назначена | Настройки → Управление → Demotivator |
 
 Настройки также открываются через **Mod Menu**.
 
